@@ -1,11 +1,8 @@
-import os
-# Força o servidor em nuvem a instalar o Plotly e o Pandas antes de rodar o painel
-os.system("pip install plotly pandas")
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import datetime
+import os
 import zoneinfo
 
 # 1. CONFIGURAÇÕES DE IDENTIDADE E ESTILIZAÇÃO PROTEGIDA (100% INTACTA)
@@ -120,7 +117,7 @@ with st.sidebar:
     mes_selecionado = st.selectbox("Exibir dados do mês:", lista_meses, index=0)
     st.divider()
     
-    # SÓ MOSTA O FORMULÁRIO SE NÃO FOR O GESTOR
+    # SÓ MOSTRA O FORMULÁRIO SE NÃO FOR O GESTOR
     if not modo_leitor:
         with st.form("form_shield_pro_final", clear_on_submit=True):
             f_data = st.date_input("Data da Atividade", agora_brasilia.date(), format="DD/MM/YYYY")
