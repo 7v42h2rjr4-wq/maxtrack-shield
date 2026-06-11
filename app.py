@@ -1,8 +1,11 @@
+import os
+# Força o servidor em nuvem a instalar o Plotly e o Pandas antes de rodar o painel
+os.system("pip install plotly pandas")
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import datetime
-import os
 import zoneinfo
 
 # 1. CONFIGURAÇÕES DE IDENTIDADE E ESTILIZAÇÃO PROTEGIDA (100% INTACTA)
@@ -58,7 +61,6 @@ agora_brasilia = datetime.datetime.now(FUSO_BRASILIA)
 mes_atual_texto = agora_brasilia.strftime('%m/%Y')
 
 # 3. CONTROLE DE ACESSO VIA URL (TRAVA DO GESTOR)
-# Se a URL contiver '?view=gestor', o modo_leitor vira True
 query_params = st.query_params
 modo_leitor = query_params.get("view") == "gestor"
 
@@ -118,7 +120,7 @@ with st.sidebar:
     mes_selecionado = st.selectbox("Exibir dados do mês:", lista_meses, index=0)
     st.divider()
     
-    # SÓ MOSTRA O FORMULÁRIO SE NÃO FOR O GESTOR
+    # SÓ MOSTA O FORMULÁRIO SE NÃO FOR O GESTOR
     if not modo_leitor:
         with st.form("form_shield_pro_final", clear_on_submit=True):
             f_data = st.date_input("Data da Atividade", agora_brasilia.date(), format="DD/MM/YYYY")
@@ -169,7 +171,7 @@ with st.sidebar:
                     st.success("✅ Atividade registrada!")
                     st.rerun()
 
-# --- PAINEL PRINCIPAL (DESIGN ORIGINAL MANTIDO 100%) ---
+# --- PAINEL PRINCIPAL ---
 st.title("📊 MAXTRACK SHIELD // PRO")
 st.markdown(f"Visualização focada no período de referência: **{mes_selecionado}**")
 
@@ -229,12 +231,12 @@ if not df.empty and "Area" in df.columns and 'Mes_Ano_Aux' in df.columns:
                     st.write(f"**Horas Gastas:** {horas_formatadas}")
                     st.write(f"**Impacto Estratégico:** {row['Impacto']}")
                     
-                    # SÓ MOSTA O BOTÃO DE EXCLUIR SE NÃO FOR O GESTOR
+                    # SÓ MOSTRA O BOTÃO DE EXCLUIR SE NÃO FOR O GESTOR
                     if not modo_leitor:
                         st.markdown("<br>", unsafe_allow_html=True)
                         if st.button(f"🗑️ Excluir Lançamento", key=f"del_shield_real_{i}"):
                             apagar_registro(i)
-                        
+                            
                 with col_img:
                     if "Imagem_Path" in df_filtrado.columns and pd.notna(row['Imagem_Path']) and row['Imagem_Path'] != "N/A" and os.path.exists(str(row['Imagem_Path'])):
                         st.image(str(row['Imagem_Path']), caption="Evidência Visual")
