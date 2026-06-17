@@ -98,7 +98,7 @@ else:
     df_filtrado = pd.DataFrame()
 
 if df_filtrado.empty:
-    st.info(class_name="aviso", text=f"Nenhuma atividade registrada para o período {mes_selecionado}.")
+    st.info(f"Nenhuma atividade registrada para o período {mes_selecionado}.")
 else:
     # Métricas rápidas no topo
     total_atividades = len(df_filtrado)
