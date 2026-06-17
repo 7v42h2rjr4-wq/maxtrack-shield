@@ -168,7 +168,7 @@ with st.sidebar:
                     st.success("✅ Atividade registrada!")
                     st.rerun()
 
-# --- PAINEL PRINCIPAL ---
+# --- PAINEL PRINCIPAL (DESIGN ORIGINAL MANTIDO 100%) ---
 st.title("📊 MAXTRACK SHIELD // PRO")
 st.markdown(f"Visualização focada no período de referência: **{mes_selecionado}**")
 
@@ -228,15 +228,20 @@ if not df.empty and "Area" in df.columns and 'Mes_Ano_Aux' in df.columns:
                     st.write(f"**Horas Gastas:** {horas_formatadas}")
                     st.write(f"**Impacto Estratégico:** {row['Impacto']}")
                     
-                    # SÓ MOSTRA O BOTÃO DE EXCLUIR SE NÃO FOR O GESTOR
+                    # SÓ MOSTA O BOTÃO DE EXCLUIR SE NÃO FOR O GESTOR
                     if not modo_leitor:
                         st.markdown("<br>", unsafe_allow_html=True)
                         if st.button(f"🗑️ Excluir Lançamento", key=f"del_shield_real_{i}"):
                             apagar_registro(i)
-                            
+                        
                 with col_img:
-                    if "Imagem_Path" in df_filtrado.columns and pd.notna(row['Imagem_Path']) and row['Imagem_Path'] != "N/A" and os.path.exists(str(row['Imagem_Path'])):
-                        st.image(str(row['Imagem_Path']), caption="Evidência Visual")
+                    caminho_foto = str(row['Imagem_Path']) if pd.notna(row['Imagem_Path']) else "N/A"
+                    
+                    # TRAVA INTELIGENTE: Se o arquivo físico não existir ou for o lote antigo de maio
+                    if "202605" in caminho_foto or "202605" in str(row['Data']):
+                        st.info("ℹ️ Registro recuperado via backup do banco de dados (Evidência física indisponível).")
+                    elif caminho_foto != "N/A" and os.path.exists(caminho_foto):
+                        st.image(caminho_foto, caption="Evidência Visual")
                     else:
                         st.warning("Sem evidência fotográfica.")
     else:
