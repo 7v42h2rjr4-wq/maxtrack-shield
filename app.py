@@ -51,15 +51,15 @@ else:
     else:
         st.sidebar.info("Modo Visualização (Apenas Leitura)")
 
-# Filtro de Dashboard (Disponível para todos)
+# Filtro de Dashboard (Disponível para todos - Agora com a opção de listar tudo junto)
 st.sidebar.subheader("📅 Filtro do Dashboard")
 if not df.empty:
     df['Mes_Ano'] = df['Data'].dt.strftime('%m/%Y')
-    opcoes_mes = sorted(df['Mes_Ano'].unique(), reverse=True)
+    opcoes_mes = ["Ver Todos"] + sorted(df['Mes_Ano'].unique(), reverse=True)
 else:
-    opcoes_mes = [datetime.now().strftime('%m/%Y')]
+    opcoes_mes = ["Ver Todos", datetime.now().strftime('%m/%Y')]
 
-mes_selecionado = st.sidebar.selectbox("Selecione o mês de referência:", opcoes_mes)
+mes_selecionado = st.sidebar.selectbox("Selecione o período:", opcoes_mes)
 
 # Formulário de Cadastro (SÓ APARECE SE O MODO EDITOR ESTIVER ATIVADO)
 if modo_editor:
@@ -91,21 +91,24 @@ if modo_editor:
 # --- PAINEL PRINCIPAL ---
 st.title("📊 Histórico de Atividades")
 
-# Filtrar dados da tela pelo mês selecionado
+# Filtrar dados da tela de acordo com a seleção (Ver Tudo ou Mês Específico)
 if not df.empty:
-    df_filtrado = df[df['Mes_Ano'] == mes_selecionado].sort_values(by="Data", ascending=False)
+    if mes_selecionado == "Ver Todos":
+        df_filtrado = df.sort_values(by="Data", ascending=False)
+    else:
+        df_filtrado = df[df['Mes_Ano'] == mes_selecionado].sort_values(by="Data", ascending=False)
 else:
     df_filtrado = pd.DataFrame()
 
 if df_filtrado.empty:
-    st.info(f"Nenhuma atividade registrada para o período {mes_selecionado}.")
+    st.info(f"Nenhuma atividade registrada para o período selecionado.")
 else:
     # Métricas rápidas no topo
     total_atividades = len(df_filtrado)
     total_horas = df_filtrado['Horas'].sum()
     
     col1, col2 = st.columns(2)
-    col1.metric("Atividades no Mês", f"{total_atividades}")
+    col1.metric("Atividades Exibidas", f"{total_atividades}")
     col2.metric("Total de Horas Dedicadas", f"{total_horas}h")
     
     st.write("---")
