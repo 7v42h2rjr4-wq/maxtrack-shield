@@ -22,23 +22,39 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Caminho ajustado para buscar o arquivo dentro da pasta correta no GitHub
-DATA_FILE = "Maxtrack_Shield/dados_shield.csv"
+# --- SISTEMA DE BUSCA DE ARQUIVO ULTRA-RESISTENTE ---
+# Lista de caminhos possíveis para o Python testar no GitHub
+CANDIDATOS = [
+    "Maxtrack_Shield/dados_shield.csv",
+    "maxtrack_shield/dados_shield.csv",
+    "dados_shield.csv",
+    "Maxtrack_Shield/dados_shield_recuperado.csv"
+]
 
-# Inicializar ou carregar o arquivo de dados tratando delimitadores do Excel
-if os.path.exists(DATA_FILE):
-    try:
-        # Tenta ler primeiro com ponto e vírgula (padrão do Excel BR)
-        df = pd.read_csv(DATA_FILE, sep=';')
-        if 'Data' not in df.columns or df.shape[1] < 3:
-            # Se colunas estiverem erradas, tenta ler com vírgula normal
-            df = pd.read_csv(DATA_FILE, sep=',')
-        
-        df['Data'] = pd.to_datetime(df['Data'])
-    except Exception as e:
-        df = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
-else:
-    df = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
+DATA_FILE = None
+df = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
+
+# Procura o arquivo vivo em cada um dos caminhos
+for caminho in CANDIDATOS:
+    if os.path.exists(caminho):
+        DATA_FILE = caminho
+        try:
+            # Tenta ler com o padrão ponto-e-vírgula do Excel brasileiro
+            temp_df = pd.read_csv(caminho, sep=';')
+            if 'Data' not in temp_df.columns or temp_df.shape[1] < 3:
+                # Se falhar, tenta com vírgula normal
+                temp_df = pd.read_csv(caminho, sep=',')
+            
+            if 'Data' in temp_df.columns:
+                df = temp_df
+                df['Data'] = pd.to_datetime(df['Data'])
+                break # Arquivo encontrado e carregado com sucesso!
+        except:
+            continue
+
+# Se nenhum foi achado, define o padrão na raiz para não quebrar
+if DATA_FILE is None:
+    DATA_FILE = "dados_shield.csv"
 
 # --- BARRA LATERAL ---
 st.sidebar.title("🛡️ MAXTRACK SHIELD")
@@ -58,7 +74,7 @@ else:
     else:
         st.sidebar.info("Modo Visualização (Apenas Leitura)")
 
-# Filtro de Dashboard (Disponível para todos - Agora junta Maio e Junho)
+# Filtro de Dashboard (Disponível para todos)
 st.sidebar.subheader("📅 Filtro do Dashboard")
 if not df.empty:
     df['Mes_Ano'] = df['Data'].dt.strftime('%m/%Y')
@@ -91,7 +107,7 @@ if modo_editor:
                     "Impacto": [novo_impacto]
                 })
                 df = pd.concat([df, novo_registro], ignore_index=True)
-                df.to_csv(DATA_FILE, index=False, sep=';') # Salva no formato robusto
+                df.to_csv(DATA_FILE, index=False, sep=';')
                 st.sidebar.success("Atividade registrada com sucesso!")
                 st.rerun()
 
@@ -108,7 +124,7 @@ else:
     df_filtrado = pd.DataFrame()
 
 if df_filtrado.empty:
-    st.info(f"Nenhuma atividade encontrada na pasta 'Maxtrack_Shield/dados_shield.csv' para o período selecionado.")
+    st.info("Buscando dados... Se o histórico não carregar, verifique se o arquivo .csv foi commitado corretamente no GitHub.")
 else:
     # Métricas rápidas no topo
     total_atividades = len(df_filtrado)
@@ -122,7 +138,6 @@ else:
     
     # Listagem de Atividades
     for index, row in df_filtrado.iterrows():
-        # Trata possíveis erros de formatação de data se houver lixo no arquivo
         try:
             data_formatada = row['Data'].strftime('%d/%m/%Y')
         except:
@@ -136,15 +151,3 @@ else:
                 <p><b>Impacto Estratégico:</b><br>{row['Impacto']}</p>
             </div>
         """, unsafe_allow_html=True)
-        
-        # Botão de Exclusão (SÓ APARECE SE O MODO EDITOR ESTIVER ATIVADO)
-        if modo_editor:
-            # Impedir exclusão de registros de Maio
-            if hasattr(row['Data'], 'month') and row['Data'].month == 5 and row['Data'].year == 2026:
-                st.warning("🔒 Registros de Maio não podem ser excluídos.")
-            else:
-                if st.button(f"🗑️ Excluir Lançamento #{index}", key=f"del_{index}"):
-                    df = df.drop(index)
-                    df.to_csv(DATA_FILE, index=False, sep=';')
-                    st.success("Registro excluído!")
-                    st.rerun()
