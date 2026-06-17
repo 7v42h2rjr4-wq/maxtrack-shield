@@ -22,13 +22,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inicializar ou carregar o arquivo de dados
-DATA_FILE = "dados_shield.csv"
+# Caminho ajustado para buscar o arquivo dentro da pasta correta no GitHub
+DATA_FILE = "Maxtrack_Shield/dados_shield.csv"
+
+# Inicializar ou carregar o arquivo de dados tratando delimitadores do Excel
 if os.path.exists(DATA_FILE):
     try:
-        df = pd.read_csv(DATA_FILE)
+        # Tenta ler primeiro com ponto e vírgula (padrão do Excel BR)
+        df = pd.read_csv(DATA_FILE, sep=';')
+        if 'Data' not in df.columns or df.shape[1] < 3:
+            # Se colunas estiverem erradas, tenta ler com vírgula normal
+            df = pd.read_csv(DATA_FILE, sep=',')
+        
         df['Data'] = pd.to_datetime(df['Data'])
-    except:
+    except Exception as e:
         df = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
 else:
     df = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
@@ -51,7 +58,7 @@ else:
     else:
         st.sidebar.info("Modo Visualização (Apenas Leitura)")
 
-# Filtro de Dashboard (Disponível para todos - Agora com a opção de listar tudo junto)
+# Filtro de Dashboard (Disponível para todos - Agora junta Maio e Junho)
 st.sidebar.subheader("📅 Filtro do Dashboard")
 if not df.empty:
     df['Mes_Ano'] = df['Data'].dt.strftime('%m/%Y')
@@ -73,7 +80,7 @@ if modo_editor:
         btn_salvar = st.form_submit_button("Salvar Registro")
         
         if btn_salvar and nova_ativ and novo_impacto:
-            # Trava para impedir lançamentos retroativos em Maio (Apenas Junho/2026 em diante)
+            # Trava para impedir lançamentos retroativos em Maio
             if nova_data.month == 5 and nova_data.year == 2026:
                 st.sidebar.error("⚠️ Os registros de Maio/2026 foram consolidados e estão travados para edição.")
             else:
@@ -84,7 +91,7 @@ if modo_editor:
                     "Impacto": [novo_impacto]
                 })
                 df = pd.concat([df, novo_registro], ignore_index=True)
-                df.to_csv(DATA_FILE, index=False)
+                df.to_csv(DATA_FILE, index=False, sep=';') # Salva no formato robusto
                 st.sidebar.success("Atividade registrada com sucesso!")
                 st.rerun()
 
@@ -101,7 +108,7 @@ else:
     df_filtrado = pd.DataFrame()
 
 if df_filtrado.empty:
-    st.info(f"Nenhuma atividade registrada para o período selecionado.")
+    st.info(f"Nenhuma atividade encontrada na pasta 'Maxtrack_Shield/dados_shield.csv' para o período selecionado.")
 else:
     # Métricas rápidas no topo
     total_atividades = len(df_filtrado)
@@ -115,9 +122,15 @@ else:
     
     # Listagem de Atividades
     for index, row in df_filtrado.iterrows():
+        # Trata possíveis erros de formatação de data se houver lixo no arquivo
+        try:
+            data_formatada = row['Data'].strftime('%d/%m/%Y')
+        except:
+            data_formatada = str(row['Data'])
+
         st.markdown(f"""
             <div class="card-atividade">
-                <h4>📅 Data: {row['Data'].strftime('%d/%m/%Y')}</h4>
+                <h4>📅 Data: {data_formatada}</h4>
                 <p><b>O que foi feito? (Atividade):</b><br>{row['Atividade']}</p>
                 <p><b>Horas Gastas:</b> {row['Horas']}h</p>
                 <p><b>Impacto Estratégico:</b><br>{row['Impacto']}</p>
@@ -127,11 +140,11 @@ else:
         # Botão de Exclusão (SÓ APARECE SE O MODO EDITOR ESTIVER ATIVADO)
         if modo_editor:
             # Impedir exclusão de registros de Maio
-            if row['Data'].month == 5 and row['Data'].year == 2026:
+            if hasattr(row['Data'], 'month') and row['Data'].month == 5 and row['Data'].year == 2026:
                 st.warning("🔒 Registros de Maio não podem ser excluídos.")
             else:
                 if st.button(f"🗑️ Excluir Lançamento #{index}", key=f"del_{index}"):
                     df = df.drop(index)
-                    df.to_csv(DATA_FILE, index=False)
+                    df.to_csv(DATA_FILE, index=False, sep=';')
                     st.success("Registro excluído!")
                     st.rerun()
