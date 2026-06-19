@@ -3,28 +3,42 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Configuração da página com a paleta Maxtrack (Deep Navy)
-st.set_page_config(page_title="MAXTRACK SHIELD // PRO", layout="wide", initial_sidebar_state="expanded")
+# Configuração da página - Interface de Alta Performance
+st.set_page_config(page_title="MAXTRACK SHIELD // PERFORMANCE", layout="wide", initial_sidebar_state="expanded")
 
-# Estilização customizada para fundo preto e detalhes em azul petróleo/navy (Sem cinza)
+# Estilização Cyberpunk/Neon de alto contraste (Fundo 100% preto, elementos super vivos)
 st.markdown("""
     <style>
+    /* Fundo totalmente preto e textos em branco puro para máximo contraste */
     .stApp { background-color: #000000; color: #FFFFFF; }
-    [data-testid="stSidebar"] { background-color: #050C1A; border-right: 1px solid #0A1931; }
-    h1, h2, h3, h4, p, span { color: #FFFFFF !important; }
+    [data-testid="stSidebar"] { background-color: #020612; border-right: 2px solid #00E5FF; }
+    
+    /* Títulos e textos com brilho sutil */
+    h1, h2, h3, h4 { color: #00E5FF !important; font-family: 'Segoe UI', Roboto, sans-serif; font-weight: 800; }
+    p, span, label { color: #FFFFFF !important; }
+    
+    /* Botões com bordas e efeitos em Ciano Neon */
     div.stButton > button {
-        background-color: #0A1931; color: #FFFFFF; border: 1px solid #15305B; border-radius: 4px;
+        background-color: #001A24; color: #00E5FF; border: 2px solid #00E5FF; border-radius: 6px;
+        font-weight: bold; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); transition: all 0.3s;
     }
-    div.stButton > button:hover { background-color: #15305B; border-color: #1E4687; }
+    div.stButton > button:hover { 
+        background-color: #00E5FF; color: #000000; box-shadow: 0 0 20px #00E5FF;
+    }
+    
+    /* Cards de Atividades com bordas em Verde Neon para dar contraste vivo */
     .card-atividade {
-        background-color: #020813; border: 1px solid #0A1931; border-radius: 6px; padding: 15px; margin-bottom: 15px;
+        background-color: #010A15; border: 1px solid #00FF66; border-radius: 8px; 
+        padding: 18px; margin-bottom: 15px; box-shadow: 3px 3px 12px rgba(0, 255, 102, 0.1);
     }
-    /* Customização dos blocos de métricas para combinar com o layout */
-    [data-testid="stMetricValue"] { color: #00D2FF !important; font-family: monospace; }
+    .card-data { color: #00FF66 !important; font-weight: bold; font-size: 1.1em; }
+    
+    /* Customização das métricas com cores elétricas separadas */
+    [data-testid="stMetricLabel"] { font-size: 1.1rem !important; font-weight: bold !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- SISTEMA DE BUSCA DE ARQUIVO ULTRA-RESISTENTE ---
+# --- SISTEMA DE BUSCA DE ARQUIVO RESISTENTE ---
 CANDIDATOS = [
     "Maxtrack_Shield/dados_shield.csv",
     "maxtrack_shield/dados_shield.csv",
@@ -54,24 +68,22 @@ if DATA_FILE is None:
     DATA_FILE = "dados_shield.csv"
 
 # --- BARRA LATERAL ---
-st.sidebar.title("🛡️ MAXTRACK SHIELD")
+st.sidebar.title("🛡️ SHIELD // PRO")
 
-# Trava de Segurança por Senha para Modo Editor
 st.sidebar.subheader("🔒 Autenticação")
-senha = st.sidebar.text_input("Digite a senha para editar/lançar:", type="password")
+senha = st.sidebar.text_input("Senha de Editor:", type="password")
 
 if senha == "maxtrack2026":
     modo_editor = True
-    st.sidebar.success("Modo Editor Ativado!")
+    st.sidebar.success("MODO CONFIGURAÇÃO ATIVO")
 else:
     modo_editor = False
     if senha != "":
-        st.sidebar.error("Senha incorreta. Modo Visualização Ativado.")
+        st.sidebar.error("Acesso de Leitura.")
     else:
-        st.sidebar.info("Modo Visualização (Apenas Leitura)")
+        st.sidebar.info("Modo Visualização (Gestão)")
 
-# Filtro de Dashboard (Disponível para todos os gestores)
-st.sidebar.subheader("📅 Filtro do Dashboard")
+st.sidebar.subheader("📅 Período")
 if not df.empty:
     df['Mes_Ano'] = df['Data'].dt.strftime('%m/%Y')
     opcoes_mes = ["Ver Todos"] + sorted(df['Mes_Ano'].unique(), reverse=True)
@@ -80,20 +92,19 @@ else:
 
 mes_selecionado = st.sidebar.selectbox("Selecione o período:", opcoes_mes)
 
-# Formulário de Cadastro (EXCLUSIVO DO MODO EDITOR)
 if modo_editor:
-    st.sidebar.subheader("🚀 Registrar Atividade")
+    st.sidebar.subheader("🚀 Novo Registro")
     with st.sidebar.form(key="form_cadastro", clear_on_submit=True):
-        nova_data = st.date_input("Data da Atividade", datetime.now())
-        nova_ativ = st.text_area("O que foi feito? (Atividade)")
-        nova_hora = st.number_input("Horas Gastas", min_value=0.5, max_value=24.0, step=0.5, value=1.0)
-        novo_impacto = st.text_area("Impacto Estratégico")
+        nova_data = st.date_input("Data", datetime.now())
+        nova_ativ = st.text_area("Atividade Realizada")
+        nova_hora = st.number_input("Horas Dedicadas", min_value=0.5, max_value=24.0, step=0.5, value=1.0)
+        novo_impacto = st.text_area("Impacto no Negócio")
         
-        btn_salvar = st.form_submit_button("Salvar Registro")
+        btn_salvar = st.form_submit_button("🔥 PUBLICAR AGORA")
         
         if btn_salvar and nova_ativ and novo_impacto:
             if nova_data.month == 5 and nova_data.year == 2026:
-                st.sidebar.error("⚠️ Os registros de Maio/2026 foram consolidados e estão travados para edição.")
+                st.sidebar.error("⚠️ Registros de Maio consolidados.")
             else:
                 novo_registro = pd.DataFrame({
                     "Data": [pd.to_datetime(nova_data)],
@@ -103,13 +114,13 @@ if modo_editor:
                 })
                 df = pd.concat([df, novo_registro], ignore_index=True)
                 df.to_csv(DATA_FILE, index=False, sep=';')
-                st.sidebar.success("Atividade registrada com sucesso!")
+                st.sidebar.success("Registrado!")
                 st.rerun()
 
-# --- PAINEL PRINCIPAL (TOTALMENTE VISÍVEL PARA O GESTOR) ---
-st.title("📊 Histórico de Atividades")
+# --- PAINEL PRINCIPAL ---
+st.title("⚡ DASHBOARD DE PRODUTIVIDADE EM TEMPO REAL")
+st.write("---")
 
-# Filtrar dados da tela de acordo com a seleção
 if not df.empty:
     if mes_selecionado == "Ver Todos":
         df_filtrado = df.sort_values(by="Data", ascending=False)
@@ -119,32 +130,45 @@ else:
     df_filtrado = pd.DataFrame()
 
 if df_filtrado.empty:
-    st.info("Buscando dados... Se o histórico não carregar, verifique se o arquivo .csv foi commitado corretamente no GitHub.")
+    st.info("Aguardando sincronização de dados...")
 else:
-    # 1. Métricas Rápidas no Topo
+    # 1. KPls Impactantes com Cores Neon separadas
     total_atividades = len(df_filtrado)
     total_horas = df_filtrado['Horas'].sum()
     
     col1, col2 = st.columns(2)
-    col1.metric("Volume de Atividades", f"{total_atividades}")
-    col2.metric("Total de Horas Alocadas", f"{total_horas}h")
+    with col1:
+        st.markdown("<h3 style='color: #00E5FF !important; margin-bottom:0;'>Volume de Entregas</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='color: #00E5FF !important; font-size: 3.5rem; margin-top:0;'>{total_atividades}</h1>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<h3 style='color: #00FF66 !important; margin-bottom:0;'>Carga Horária Total</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='color: #00FF66 !important; font-size: 3.5rem; margin-top:0;'>{total_horas}h</h1>", unsafe_allow_html=True)
     
     st.write("---")
     
-    # 2. SEÇÃO DE GRÁFICOS (Gera automaticamente para o Gestor)
-    st.subheader("📈 Análise Gráfica de Produtividade")
+    # 2. SEÇÃO DE GRÁFICOS ALTERADA PARA MÁXIMO IMPACTO
+    st.subheader("📊 Mapeamento e Carga Diária")
     
-    # Prepara dados para o gráfico de evolução de horas por data
     df_grafico = df_filtrado.groupby('Data')['Horas'].sum().reset_index()
     df_grafico = df_grafico.set_index('Data')
     
-    # Gráfico de Área mostrando a carga horária dedicada ao longo do tempo
-    st.area_chart(df_grafico, y="Horas", use_container_width=True)
+    # Criando colunas para colocar dois tipos de visualizações vibrantes lado a lado
+    g_col1, g_col2 = st.columns(2)
+    
+    with g_col1:
+        st.markdown("<p style='color: #00E5FF; font-weight: bold;'>⚡ Distribuição Diária (Barras)</p>", unsafe_allow_html=True)
+        # O gráfico de barras gera cores muito mais contrastantes no fundo escuro
+        st.bar_chart(df_grafico, y="Horas", use_container_width=True)
+        
+    with g_col2:
+        st.markdown("<p style='color: #00FF66; font-weight: bold;'>📈 Tendência de Ritmo (Linhas)</p>", unsafe_allow_html=True)
+        # Linha para ver picos e quedas de esforço com clareza
+        st.line_chart(df_grafico, y="Horas", use_container_width=True)
     
     st.write("---")
     
-    # 3. Listagem das Atividades em formato Card
-    st.subheader("📋 Detalhamento Executivo")
+    # 3. LISTAGEM EM FORMATO CARDS NEON
+    st.subheader("📋 Histórico Executivo de Atividades")
     for index, row in df_filtrado.iterrows():
         try:
             data_formatada = row['Data'].strftime('%d/%m/%Y')
@@ -153,20 +177,19 @@ else:
 
         st.markdown(f"""
             <div class="card-atividade">
-                <h4>📅 Data: {data_formatada}</h4>
-                <p><b>O que foi feito? (Atividade):</b><br>{row['Atividade']}</p>
-                <p><b>Horas Gastas:</b> {row['Horas']}h</p>
-                <p><b>Impacto Estratégico:</b><br>{row['Impacto']}</p>
+                <span class="card-data">📅 DATA DA ENTREGA: {data_formatada}</span>
+                <p style="margin-top: 10px;"><b>🔹 Descrição da Atividade:</b><br>{row['Atividade']}</p>
+                <p><b>⏱️ Tempo Alocado:</b> <span style="color: #00E5FF; font-weight:bold;">{row['Horas']} horas</span></p>
+                <p style="margin-bottom: 0;"><b>🎯 Impacto Gerado:</b><br>{row['Impacto']}</p>
             </div>
         """, unsafe_allow_html=True)
         
-        # Botão de Exclusão (SÓ APARECE SE O MODO EDITOR ESTIVER ATIVADO)
         if modo_editor:
             if hasattr(row['Data'], 'month') and row['Data'].month == 5 and row['Data'].year == 2026:
-                st.warning("🔒 Registros de Maio não podem ser excluídos.")
+                st.warning("🔒 Histórico consolidado.")
             else:
-                if st.button(f"🗑️ Excluir Lançamento #{index}", key=f"del_{index}"):
+                if st.button(f"🗑️ APAGAR REGISTRO #{index}", key=f"del_{index}"):
                     df = df.drop(index)
                     df.to_csv(DATA_FILE, index=False, sep=';')
-                    st.success("Registro excluído!")
+                    st.success("Removido com sucesso!")
                     st.rerun()
