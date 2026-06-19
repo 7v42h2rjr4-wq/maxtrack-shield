@@ -6,66 +6,59 @@ import os
 # Configuração da página - Interface de Alta Performance
 st.set_page_config(page_title="MAXTRACK SHIELD // PERFORMANCE", layout="wide", initial_sidebar_state="expanded")
 
-# Estilização Cyberpunk/Neon de alto contraste (Fundo 100% preto, elementos super vivos)
+# Estilização Cyberpunk/Neon de alto contraste
 st.markdown("""
     <style>
-    /* Fundo totalmente preto e textos em branco puro para máximo contraste */
     .stApp { background-color: #000000; color: #FFFFFF; }
     [data-testid="stSidebar"] { background-color: #020612; border-right: 2px solid #00E5FF; }
-    
-    /* Títulos e textos com brilho sutil */
     h1, h2, h3, h4 { color: #00E5FF !important; font-family: 'Segoe UI', Roboto, sans-serif; font-weight: 800; }
     p, span, label { color: #FFFFFF !important; }
-    
-    /* Botões com bordas e efeitos em Ciano Neon */
     div.stButton > button {
         background-color: #001A24; color: #00E5FF; border: 2px solid #00E5FF; border-radius: 6px;
         font-weight: bold; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); transition: all 0.3s;
     }
-    div.stButton > button:hover { 
-        background-color: #00E5FF; color: #000000; box-shadow: 0 0 20px #00E5FF;
-    }
-    
-    /* Cards de Atividades com bordas em Verde Neon para dar contraste vivo */
+    div.stButton > button:hover { background-color: #00E5FF; color: #000000; box-shadow: 0 0 20px #00E5FF; }
     .card-atividade {
         background-color: #010A15; border: 1px solid #00FF66; border-radius: 8px; 
         padding: 18px; margin-bottom: 15px; box-shadow: 3px 3px 12px rgba(0, 255, 102, 0.1);
     }
     .card-data { color: #00FF66 !important; font-weight: bold; font-size: 1.1em; }
-    
-    /* Customização das métricas com cores elétricas separadas */
     [data-testid="stMetricLabel"] { font-size: 1.1rem !important; font-weight: bold !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- SISTEMA DE BUSCA DE ARQUIVO RESISTENTE ---
-CANDIDATOS = [
-    "Maxtrack_Shield/dados_shield.csv",
-    "maxtrack_shield/dados_shield.csv",
-    "dados_shield.csv",
-    "Maxtrack_Shield/dados_shield_recuperado.csv"
-]
-
-DATA_FILE = None
-df = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
-
-for caminho in CANDIDATOS:
-    if os.path.exists(caminho):
-        DATA_FILE = caminho
-        try:
-            temp_df = pd.read_csv(caminho, sep=';')
-            if 'Data' not in temp_df.columns or temp_df.shape[1] < 3:
-                temp_df = pd.read_csv(caminho, sep=',')
-            
-            if 'Data' in temp_df.columns:
-                df = temp_df
-                df['Data'] = pd.to_datetime(df['Data'])
-                break
-        except:
-            continue
-
-if DATA_FILE is None:
+# --- CARREGAMENTO DO ARQUIVO COM MEMÓRIA CACHEADA (SESSION STATE) ---
+if 'dados_backup' not in st.session_state:
+    CANDIDATOS = [
+        "Maxtrack_Shield/dados_shield.csv",
+        "maxtrack_shield/dados_shield.csv",
+        "dados_shield.csv",
+        "Maxtrack_Shield/dados_shield_recuperado.csv"
+    ]
+    
     DATA_FILE = "dados_shield.csv"
+    df_inicial = pd.DataFrame(columns=["Data", "Atividade", "Horas", "Impacto"])
+    
+    for caminho in CANDIDATOS:
+        if os.path.exists(caminho):
+            DATA_FILE = caminho
+            try:
+                temp_df = pd.read_csv(caminho, sep=';')
+                if 'Data' not in temp_df.columns or temp_df.shape[1] < 3:
+                    temp_df = pd.read_csv(caminho, sep=',')
+                if 'Data' in temp_df.columns:
+                    df_inicial = temp_df
+                    df_inicial['Data'] = pd.to_datetime(df_inicial['Data'])
+                    break
+            except:
+                continue
+                
+    st.session_state['dados_backup'] = df_inicial
+    st.session_state['caminho_arquivo'] = DATA_FILE
+
+# Recupera o DataFrame ativo da memória estável
+df = st.session_state['dados_backup']
+DATA_FILE = st.session_state['caminho_arquivo']
 
 # --- BARRA LATERAL ---
 st.sidebar.title("🛡️ SHIELD // PRO")
@@ -92,6 +85,7 @@ else:
 
 mes_selecionado = st.sidebar.selectbox("Selecione o período:", opcoes_mes)
 
+# Formulário de Cadastro conectado à Memória Ativa
 if modo_editor:
     st.sidebar.subheader("🚀 Novo Registro")
     with st.sidebar.form(key="form_cadastro", clear_on_submit=True):
@@ -112,9 +106,16 @@ if modo_editor:
                     "Horas": [nova_hora],
                     "Impacto": [novo_impacto]
                 })
-                df = pd.concat([df, novo_registro], ignore_index=True)
-                df.to_csv(DATA_FILE, index=False, sep=';')
-                st.sidebar.success("Registrado!")
+                # Atualiza na memória do Session State na mesma hora
+                st.session_state['dados_backup'] = pd.concat([df, novo_registro], ignore_index=True)
+                
+                # Tenta gravar em arquivo por segurança (se o servidor permitir)
+                try:
+                    st.session_state['dados_backup'].to_csv(DATA_FILE, index=False, sep=';')
+                except:
+                    pass
+                    
+                st.sidebar.success("Registrado na memória!")
                 st.rerun()
 
 # --- PAINEL PRINCIPAL ---
@@ -125,7 +126,6 @@ if not df.empty:
     if mes_selecionado == "Ver Todos":
         df_filtrado = df.sort_values(by="Data")
     else:
-        # CORREÇÃO DO BUG DE DIGITAÇÃO AQUI:
         df_filtrado = df[df['Mes_Ano'] == mes_selecionado].sort_values(by="Data")
 else:
     df_filtrado = pd.DataFrame()
@@ -147,7 +147,7 @@ else:
     
     st.write("---")
     
-    # 2. SEÇÃO DE GRÁFICOS - CONSOLIDAÇÃO TOTAL POR MÊS
+    # 2. SEÇÃO DE GRÁFICOS - MENSAL CONSOLIDADO
     st.subheader("📊 Mapeamento Acumulado Mensal")
     
     NOMES_MESES = {
@@ -160,7 +160,6 @@ else:
     df_mes['Num_Mes'] = df_mes['Data'].dt.month
     df_mes['Mês'] = df_mes['Num_Mes'].map(NOMES_MESES)
     
-    # Garante que o agrupamento não quebre se houver apenas um registro de teste
     df_grafico_mensal = df_mes.groupby(['Num_Mes', 'Mês'])['Horas'].sum().reset_index()
     df_grafico_mensal = df_grafico_mensal.sort_values(by='Num_Mes')
     df_grafico_mensal = df_grafico_mensal.set_index('Mês')
@@ -191,7 +190,7 @@ else:
             <div class="card-atividade">
                 <span class="card-data">📅 DATA DA ENTREGA: {data_formatada}</span>
                 <p style="margin-top: 10px;"><b>🔹 Descrição da Atividade:</b><br>{row['Atividade']}</p>
-                <p><b>⏱️ Tempo Alocado:</b> <span style="color: #00E5FF; font-weight:bold;">{row['Horas']} hours</span></p>
+                <p><b>⏱️ Tempo Alocado:</b> <span style="color: #00E5FF; font-weight:bold;">{row['Horas']} horas</span></p>
                 <p style="margin-bottom: 0;"><b>🎯 Impacto Gerado:</b><br>{row['Impacto']}</p>
             </div>
         """, unsafe_allow_html=True)
@@ -201,7 +200,10 @@ else:
                 st.warning("🔒 Histórico consolidado.")
             else:
                 if st.button(f"🗑️ APAGAR REGISTRO #{index}", key=f"del_{index}"):
-                    df = df.drop(index)
-                    df.to_csv(DATA_FILE, index=False, sep=';')
-                    st.success("Removido com sucesso!")
+                    st.session_state['dados_backup'] = df.drop(index)
+                    try:
+                        st.session_state['dados_backup'].to_csv(DATA_FILE, index=False, sep=';')
+                    except:
+                        pass
+                    st.success("Removido!")
                     st.rerun()
