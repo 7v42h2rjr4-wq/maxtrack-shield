@@ -2,9 +2,19 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import locale
 
 # Configuração da página - Interface de Alta Performance
 st.set_page_config(page_title="MAXTRACK SHIELD // PERFORMANCE", layout="wide", initial_sidebar_state="expanded")
+
+# Tenta forçar o sistema a usar o formato de datas em português brasileiro
+try:
+    locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
+except:
+    try:
+        locale.setlocale(locale.LC_TIME, 'portuguese_brazil')
+    except:
+        pass # Mantém o fallback caso o servidor não tenha o pacote instalado
 
 # Estilização Cyberpunk/Neon de alto contraste (Fundo 100% preto, elementos super vivos)
 st.markdown("""
@@ -132,7 +142,7 @@ else:
 if df_filtrado.empty:
     st.info("Aguardando sincronização de dados...")
 else:
-    # 1. KPls Impactantes com Cores Neon separadas
+    # 1. KPls Impactantes
     total_atividades = len(df_filtrado)
     total_horas = df_filtrado['Horas'].sum()
     
@@ -146,23 +156,24 @@ else:
     
     st.write("---")
     
-    # 2. SEÇÃO DE GRÁFICOS ALTERADA PARA MÁXIMO IMPACTO
+    # 2. SEÇÃO DE GRÁFICOS (TRADUZIDA)
     st.subheader("📊 Mapeamento e Carga Diária")
     
-    df_grafico = df_filtrado.groupby('Data')['Horas'].sum().reset_index()
-    df_grafico = df_grafico.set_index('Data')
+    # Formata a coluna de data diretamente como texto em Português antes de renderizar os gráficos
+    df_traduzido = df_filtrado.copy()
+    df_traduzido['Data PT'] = df_traduzido['Data'].dt.strftime('%d/%b') # Exemplo: 17/Mai, 05/Jun
     
-    # Criando colunas para colocar dois tipos de visualizações vibrantes lado a lado
+    df_grafico = df_traduzido.groupby('Data PT', sort=False)['Horas'].sum().reset_index()
+    df_grafico = df_grafico.set_index('Data PT')
+    
     g_col1, g_col2 = st.columns(2)
     
     with g_col1:
         st.markdown("<p style='color: #00E5FF; font-weight: bold;'>⚡ Distribuição Diária (Barras)</p>", unsafe_allow_html=True)
-        # O gráfico de barras gera cores muito mais contrastantes no fundo escuro
         st.bar_chart(df_grafico, y="Horas", use_container_width=True)
         
     with g_col2:
         st.markdown("<p style='color: #00FF66; font-weight: bold;'>📈 Tendência de Ritmo (Linhas)</p>", unsafe_allow_html=True)
-        # Linha para ver picos e quedas de esforço com clareza
         st.line_chart(df_grafico, y="Horas", use_container_width=True)
     
     st.write("---")
