@@ -2,19 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
-import locale
 
 # Configuração da página - Interface de Alta Performance
 st.set_page_config(page_title="MAXTRACK SHIELD // PERFORMANCE", layout="wide", initial_sidebar_state="expanded")
-
-# Tenta forçar o sistema a usar o formato de datas em português brasileiro
-try:
-    locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
-except:
-    try:
-        locale.setlocale(locale.LC_TIME, 'portuguese_brazil')
-    except:
-        pass # Mantém o fallback caso o servidor não tenha o pacote instalado
 
 # Estilização Cyberpunk/Neon de alto contraste (Fundo 100% preto, elementos super vivos)
 st.markdown("""
@@ -133,16 +123,16 @@ st.write("---")
 
 if not df.empty:
     if mes_selecionado == "Ver Todos":
-        df_filtrado = df.sort_values(by="Data", ascending=False)
+        df_filtrado = df.sort_values(by="Data")
     else:
-        df_filtrado = df[df['Mes_Ano'] == mes_selecionado].sort_values(by="Data", ascending=False)
+        df_filtrado = df[df['Mes_Ano'] == mes_selecionado].sort_values(by="Data")
 else:
     df_filtrado = pd.DataFrame()
 
 if df_filtrado.empty:
     st.info("Aguardando sincronização de dados...")
 else:
-    # 1. KPls Impactantes
+    # 1. KPIs Impactantes
     total_atividades = len(df_filtrado)
     total_horas = df_filtrado['Horas'].sum()
     
@@ -156,31 +146,30 @@ else:
     
     st.write("---")
     
-    # 2. SEÇÃO DE GRÁFICOS (TRADUZIDA)
+    # 2. SEÇÃO DE GRÁFICOS (MÁXIMA ESTABILIDADE E SEM INGLÊS)
     st.subheader("📊 Mapeamento e Carga Diária")
     
-    # Formata a coluna de data diretamente como texto em Português antes de renderizar os gráficos
-    df_traduzido = df_filtrado.copy()
-    df_traduzido['Data PT'] = df_traduzido['Data'].dt.strftime('%d/%b') # Exemplo: 17/Mai, 05/Jun
-    
-    df_grafico = df_traduzido.groupby('Data PT', sort=False)['Horas'].sum().reset_index()
-    df_grafico = df_grafico.set_index('Data PT')
+    # Agrupa por data real mantendo a propriedade de tempo intacta pro pandas
+    df_grafico = df_filtrado.groupby('Data')['Horas'].sum().reset_index()
     
     g_col1, g_col2 = st.columns(2)
     
     with g_col1:
         st.markdown("<p style='color: #00E5FF; font-weight: bold;'>⚡ Distribuição Diária (Barras)</p>", unsafe_allow_html=True)
-        st.bar_chart(df_grafico, y="Horas", use_container_width=True)
+        # Passando os dados estruturados de forma explícita pro Streamlit plotar nativamente com datas limpas
+        st.bar_chart(df_grafico, x="Data", y="Horas", use_container_width=True)
         
     with g_col2:
         st.markdown("<p style='color: #00FF66; font-weight: bold;'>📈 Tendência de Ritmo (Linhas)</p>", unsafe_allow_html=True)
-        st.line_chart(df_grafico, y="Horas", use_container_width=True)
+        st.line_chart(df_grafico, x="Data", y="Horas", use_container_width=True)
     
     st.write("---")
     
-    # 3. LISTAGEM EM FORMATO CARDS NEON
+    # 3. LISTAGEM EM FORMATO CARDS NEON (Invertido para ver os mais recentes no topo da lista)
     st.subheader("📋 Histórico Executivo de Atividades")
-    for index, row in df_filtrado.iterrows():
+    df_lista = df_filtrado.sort_values(by="Data", ascending=False)
+    
+    for index, row in df_lista.iterrows():
         try:
             data_formatada = row['Data'].strftime('%d/%m/%Y')
         except:
