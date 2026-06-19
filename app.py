@@ -125,8 +125,7 @@ if not df.empty:
     if mes_selecionado == "Ver Todos":
         df_filtrado = df.sort_values(by="Data")
     else:
-        df_filtrado = df[df['Mes_Ano'] == mes_selecion== "Ver Todos"].sort_values(by="Data")
-        # Se um mês específico for selecionado na barra lateral, filtramos apenas ele
+        # CORREÇÃO DO BUG DE DIGITAÇÃO AQUI:
         df_filtrado = df[df['Mes_Ano'] == mes_selecionado].sort_values(by="Data")
 else:
     df_filtrado = pd.DataFrame()
@@ -148,22 +147,20 @@ else:
     
     st.write("---")
     
-    # 2. SEÇÃO DE GRÁFICOS - CONSOLIDAÇÃO TOTAL POR MÊS (SEM INGLÊS / SEM DIAS)
+    # 2. SEÇÃO DE GRÁFICOS - CONSOLIDAÇÃO TOTAL POR MÊS
     st.subheader("📊 Mapeamento Acumulado Mensal")
     
-    # Dicionário fixo para forçar o nome do mês em português perfeitamente ordenado
     NOMES_MESES = {
         1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 
         5: "Maio", 6: "Junho", 7: "Julho", 8: "Agosto", 
         9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
     }
     
-    # Cria a coluna com o número e o nome do mês para agrupamento ordenado
     df_mes = df_filtrado.copy()
     df_mes['Num_Mes'] = df_mes['Data'].dt.month
     df_mes['Mês'] = df_mes['Num_Mes'].map(NOMES_MESES)
     
-    # Agrupa e soma as horas totais de cada mês
+    # Garante que o agrupamento não quebre se houver apenas um registro de teste
     df_grafico_mensal = df_mes.groupby(['Num_Mes', 'Mês'])['Horas'].sum().reset_index()
     df_grafico_mensal = df_grafico_mensal.sort_values(by='Num_Mes')
     df_grafico_mensal = df_grafico_mensal.set_index('Mês')
@@ -172,12 +169,10 @@ else:
     
     with g_col1:
         st.markdown("<p style='color: #00E5FF; font-weight: bold;'>⚡ Total de Horas Dedicadas por Mês (Barras)</p>", unsafe_allow_html=True)
-        # Exibe o gráfico de barras consolidado mensal
         st.bar_chart(df_grafico_mensal[['Horas']], use_container_width=True)
         
     with g_col2:
         st.markdown("<p style='color: #00FF66; font-weight: bold;'>📈 Evolução Comparativa Mensal (Linhas)</p>", unsafe_allow_html=True)
-        # Exibe a linha ligando o total de cada mês
         st.line_chart(df_grafico_mensal[['Horas']], use_container_width=True)
     
     st.write("---")
@@ -196,7 +191,7 @@ else:
             <div class="card-atividade">
                 <span class="card-data">📅 DATA DA ENTREGA: {data_formatada}</span>
                 <p style="margin-top: 10px;"><b>🔹 Descrição da Atividade:</b><br>{row['Atividade']}</p>
-                <p><b>⏱️ Tempo Alocado:</b> <span style="color: #00E5FF; font-weight:bold;">{row['Horas']} horas</span></p>
+                <p><b>⏱️ Tempo Alocado:</b> <span style="color: #00E5FF; font-weight:bold;">{row['Horas']} hours</span></p>
                 <p style="margin-bottom: 0;"><b>🎯 Impacto Gerado:</b><br>{row['Impacto']}</p>
             </div>
         """, unsafe_allow_html=True)
